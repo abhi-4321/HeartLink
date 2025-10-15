@@ -1,0 +1,26 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const db_1 = __importDefault(require("./util/db"));
+const routes_1 = __importDefault(require("./routes"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const yamljs_1 = __importDefault(require("yamljs"));
+const http_1 = __importDefault(require("http"));
+const server_1 = require("./websocket/server");
+const app = (0, express_1.default)();
+const swaggerDocument = yamljs_1.default.load("./src/openapi/swagger.yaml");
+const server = http_1.default.createServer(app);
+(0, server_1.setupWebSocket)(server);
+dotenv_1.default.config();
+(0, db_1.default)();
+const PORT = process.env.PORT || 3000;
+app.use(express_1.default.json());
+app.use('/', routes_1.default);
+app.use("/docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocument));
+server.listen(PORT, () => {
+    console.log("Server Listening on PORT:", PORT);
+});
