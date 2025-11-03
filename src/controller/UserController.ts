@@ -28,11 +28,13 @@ const createUser = async (req: Request, res: Response) => {
         // Count the existing users to assign a new ID
         const count = await User.countDocuments({}, {hint: "_id_"})
 
+        const username = email.split('@')[0]
+
         // Create a new user
         const user = new User({
             id: count + 1,
             email: email,
-            username: "",
+            username: username,
             profileImageUrl: "",
             name: "",
             gender: "",
@@ -126,32 +128,6 @@ const getUserDetailsById = async (req: Request, res: Response) => {
     }
 }
 
-const updateUserCode = async (req: Request, res: Response) => {
-    try {
-        // Proceed with user creation
-        const id = req.params.id
-        const code = req.body.code
-        const user = await User.findOne({id: id})
-
-        if (!user) {
-            res.status(404).json({error: "User not found"})
-            return
-        }
-
-        if (code && code != "") {
-            user.code = code
-        }
-
-        await user.save()
-
-        // Respond with the fetched user
-        res.status(200).json({message: "Code updated successfully"})
-
-    } catch (error: any) {
-        res.status(500).json({error: "Failed to update code", details: error.message})
-    }
-}
-
 const verifyUsername = async (req: Request, res: Response) => {
     // Check if username already exists for any user
 
@@ -166,7 +142,7 @@ const verifyUsername = async (req: Request, res: Response) => {
         const exists = await User.exists({username: username})
 
         if (exists) {
-            res.status(404).json({error: "Username is taken"})
+            res.status(409).json({error: "Username is taken"})
             return
         }
 
@@ -182,6 +158,5 @@ export default {
     createUser,
     createProfile,
     getUserDetailsById,
-    updateUserCode,
     verifyUsername
 }

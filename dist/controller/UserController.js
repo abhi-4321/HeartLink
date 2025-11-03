@@ -34,11 +34,12 @@ const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         // Count the existing users to assign a new ID
         const count = yield User_1.User.countDocuments({}, { hint: "_id_" });
+        const username = email.split('@')[0];
         // Create a new user
         const user = new User_1.User({
             id: count + 1,
             email: email,
-            username: "",
+            username: username,
             profileImageUrl: "",
             name: "",
             gender: "",
@@ -116,27 +117,6 @@ const getUserDetailsById = (req, res) => __awaiter(void 0, void 0, void 0, funct
         res.status(500).json({ error: "Failed to fetch user", details: error.message });
     }
 });
-const updateUserCode = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        // Proceed with user creation
-        const id = req.params.id;
-        const code = req.body.code;
-        const user = yield User_1.User.findOne({ id: id });
-        if (!user) {
-            res.status(404).json({ error: "User not found" });
-            return;
-        }
-        if (code && code != "") {
-            user.code = code;
-        }
-        yield user.save();
-        // Respond with the fetched user
-        res.status(200).json({ message: "Code updated successfully" });
-    }
-    catch (error) {
-        res.status(500).json({ error: "Failed to update code", details: error.message });
-    }
-});
 const verifyUsername = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Check if username already exists for any user
     try {
@@ -147,7 +127,7 @@ const verifyUsername = (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const exists = yield User_1.User.exists({ username: username });
         if (exists) {
-            res.status(404).json({ error: "Username is taken" });
+            res.status(409).json({ error: "Username is taken" });
             return;
         }
         // Respond with the fetched user
@@ -161,6 +141,5 @@ exports.default = {
     createUser,
     createProfile,
     getUserDetailsById,
-    updateUserCode,
     verifyUsername
 };
