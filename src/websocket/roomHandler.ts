@@ -1,16 +1,17 @@
 import {WebSocket} from 'ws'
 import {Room} from "../model/Room";
+import roomController from "../controller/RoomController";
 
 // Connected clients: userId → socket
 const roomClients = new Map<number, WebSocket>()
 // Room map: code → owner userId
-const roomMap = new Map<number, number>()
+const roomMap = new Map<string, number>()
 
 export const setRoomClient = (userId: number, ws: WebSocket) => {
     roomClients.set(userId, ws)
 }
 
-export const setRoomMap = (userId: number, code: number, ws: WebSocket) => {
+export const setRoomMap = (userId: number, code: string, ws: WebSocket) => {
     if (roomMap.has(code)) {
         const existingOwner = roomMap.get(code)
         if (existingOwner === userId) {
@@ -97,13 +98,7 @@ export const handleRoomMessage = async (ws: WebSocket, data: string) => {
                 console.log(`Owner ${ownerId} got ack for successful join of user ${userId} for code ${code}`)
 
                 // After both got success , add the room in database
-                const room = new Room({
-                    userId1: ownerId,
-                    userId2: joinerId,
-                    code: code
-                })
-                await room.save()
-
+                await roomController.createRoomAndAssignCode(ownerId, joinerId, code)
             } else {
                 ws.send(JSON.stringify({error: 'Joiner not connected'}))
             }

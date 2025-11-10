@@ -2,78 +2,52 @@ import {Request, Response} from "express"
 import {randomInt} from "node:crypto";
 import {Room} from "../model/Room";
 import {User} from "../model/User";
+import mongoose from "mongoose";
 
 const randomCodeGenerator = randomInt(0,100000)
 
 const generateCode = async (req: Request, res: Response) => {
     try {
-        const userId = req.params.userId
-
-        const room = await Room.findOne({userId1 : userId})
-
         let code = randomCodeGenerator
-        let codeExists = await Room.exists({code : code })
+        let codeExists = await Room.exists({code : code.toString() })
 
         while (codeExists) {
             code = randomCodeGenerator
-            codeExists = await Room.exists({code : code})
+            codeExists = await Room.exists({code : code.toString()})
         }
 
-        if (room) {
-            room.code = code
-
-            const savedRoom = await room.save()
-            res.status(200).json({room: savedRoom})
-        } else {
-            const room = new Room({
-                code : code,
-                userId1 : userId,
-                userId2 : 0,
-            })
-
-            const savedRoom = await room.save()
-            res.status(201).json({room: savedRoom})
-        }
+        res.status(200).json({code: code.toString()})
     } catch (error: any) {
         res.status(500).json({message: "Unable to generate code",error: error.message})
     }
 }
 
-const joinRoom = async (req: Request, res: Response) => {
+const createRoomAndAssignCode = async (ownerId: number, joinerId: number, code: string) => {
+    const session = await mongoose.startSession()
+    session.startTransaction()
     try {
-        const {userId, code} = req.body
+        // Create the room
+        const room = new Room({ userId1: ownerId, userId2: joinerId, code })
+        await room.save({ session })
 
-        const room = await Room.findOne({code : code})
+        console.log(`Owner : ${ownerId}, Joiner ID : ${joinerId}, Code : ${code}`)
 
-        if (!room) {
-            res.status(404).json({error: "Room not found"})
-            return
-        }
-
-        if (room.userId1 == userId) {
-            res.status(409).json({message: "Can not join your own room"})
-            return
-        }
-
-        const alreadyJoined = await Room.findOne({userId2 : userId})
-
-        if (alreadyJoined) {
-            res.status(409).json({message: 'Already joined a room'})
-            return
-        }
-
-        room.userId2 = userId
-
-        const savedRoom = await room.save()
-
+        // Update both users atomically
         await User.updateMany(
-            { id: { $in: [savedRoom.userId1, savedRoom.userId2] } },
-            { $set: { code: code } }
+            { id: { $in: [ownerId, joinerId] } },
+            { $set: { code } },
+            { session }
         )
 
-        res.status(200).json({room: savedRoom})
-    } catch (error: any) {
-        res.status(500).json({message: "Unable to join room",error: error.message})
+        await session.commitTransaction()
+        console.log(`Room ${code} created and users updated successfully`)
+        return room
+    } catch (err) {
+        await session.abortTransaction()
+        console.error('Failed to create room or update users:', err)
+        throw err
+    } finally {
+        await session.endSession()
     }
 }
 
@@ -103,6 +77,6 @@ const leaveRoom = async (req: Request, res: Response) => {
 
 export default {
     generateCode,
-    joinRoom,
+    createRoomAndAssignCode,
     leaveRoom
 }

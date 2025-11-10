@@ -20,7 +20,7 @@ export const setupRoomSocket = (server: http.Server) => {
     wssRoom.on('connection', (ws: WebSocket, req) => {
         const { query } = parse(req.url!, true)
         const userId = parseInt(query.userId as string)
-        const code = parseInt(query.code as string)
+        const code = query.code as string
 
         if (!userId || isNaN(userId)) {
             ws.send(JSON.stringify({ error: 'Invalid or missing userId' }))
@@ -28,7 +28,8 @@ export const setupRoomSocket = (server: http.Server) => {
             return
         }
 
-        if (!isNaN(code)) {
+        if (!code || code.length === 0) { }
+        else {
             setRoomMap(userId,code,ws)
         }
 

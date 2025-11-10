@@ -18,10 +18,10 @@ const createUser = async (req: Request, res: Response) => {
             return
         }
 
-        const exists = await User.exists({email: email})
+        const userA = await User.findOne({email: email})
 
-        if (exists) {
-            res.status(409).json({message: "User already exists"})
+        if (userA) {
+            res.status(409).json(userA)
             return
         }
 
