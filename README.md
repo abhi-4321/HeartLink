@@ -46,25 +46,6 @@ JWT-based authentication with middleware for protected routes.
 
 ---
 
-## **API Documentation**
-
-📚 **Endpoints Overview**  
-
-- POST /auth/login – User login  
-- POST /auth/register – User registration  
-- GET /users/:id – Get user profile  
-- PATCH /users/:id – Update user profile  
-- POST /connection/code – Validate connection code  
-- GET /moods – Get mood history (pagination supported)  
-- POST /moods – Send mood  
-- GET /chat/:roomId – Get chat messages  
-- POST /chat/:roomId – Send chat message  
-- POST /upload – Upload media (profile pic or other files)  
-
-Full API docs with request/response examples are available internally.
-
----
-
 ## **Getting Started**
 
 This backend is for internal development and deployment only.  
